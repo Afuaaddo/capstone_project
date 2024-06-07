@@ -44,4 +44,4 @@ services:
     command: scheduler
 
 volumes:
-  postgres_data:
+postgres_data:
