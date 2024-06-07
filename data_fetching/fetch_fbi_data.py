@@ -2,6 +2,9 @@ import requests
 import psycopg2
 from psycopg2.extras import execute_batch
 import os
+import pandas as pd
+import re
+from bs4 import BeautifulSoup
 
 
 def fetch_data():
@@ -13,32 +16,42 @@ def fetch_data():
 def clean_data(items):
     cleaned_items = []
     for item in items:
-        cleaned_items.append({
-            'title': item.get('title'),
-            'description': item.get('description'),
-            'url': item.get('url'),
-            'reward_text': item.get('reward_text'),
-            'poster_url': item.get('images', [{}])[0].get('original', '') if item.get('images') else '',
-            'subjects': ', '.join(item.get('subjects', [])),
-            'publication': item.get('publication'),
-            'nationality': item.get('nationality'),
-            'hair': item.get('hair'),
-            'eyes': item.get('eyes'),
-            'height': item.get('height'),
-            'weight': item.get('weight'),
-            'sex': item.get('sex'),
-            'scars_and_marks': item.get('scars_and_marks'),
-            'remarks': item.get('remarks'),
-        })
+        cleaned_item = {
+            'title': item.get('title', 'No Title'),
+            'description': item.get('description', 'No Description'),
+            'url': item.get('url', 'No URL'),
+            'reward_text': item.get('reward_text', 'No Reward'),
+            'poster_url': item.get('images', [{}])[0].get('original', 'No Poster URL') if item.get('images') else 'No Poster URL',
+            'subjects': ', '.join(item.get('subjects', ['No Subjects'])),
+            'publication': item.get('publication', 'No Publication Date'),
+            'nationality': item.get('nationality', 'No Nationality'),
+            'hair': item.get('hair', 'No Hair Description'),
+            'eyes': item.get('eyes', 'No Eye Description'),
+            'height': item.get('height', 'No Height'),
+            'weight': item.get('weight', 'No Weight'),
+            'sex': item.get('sex', 'No Sex'),
+            'scars_and_marks': item.get('scars_and_marks', 'No Scars and Marks'),
+            'remarks': clean_html(item.get('remarks', 'No Remarks')),
+        }
+        cleaned_items.append(cleaned_item)
     return cleaned_items
+
+
+def clean_html(raw_html):
+    if raw_html is None:
+        return 'No Remarks'
+    else:
+        # Remove HTML tags using BeautifulSoup
+        cleaned_text = BeautifulSoup(raw_html, "html.parser").get_text()
+        return cleaned_text
 
 
 def store_data(items):
     conn = psycopg2.connect(
-        dbname='fbi_db',
+        dbname='postgres',
         user='postgres',
-        password='password',
-        host='db'
+        password='post123',
+        host='localhost'
     )
     cursor = conn.cursor()
     query = """
@@ -52,7 +65,15 @@ def store_data(items):
     conn.close()
 
 
+def save_to_dataframe(items):
+    df = pd.DataFrame(items)
+    df.to_csv('cleaned_fbi_wanted_data.csv', index=False)
+    print("Data saved to cleaned_fbi_wanted_data.csv")
+    return df
+
+
 if __name__ == '__main__':
     data = fetch_data()
     cleaned_data = clean_data(data)
     store_data(cleaned_data)
+    df = save_to_dataframe(cleaned_data)
