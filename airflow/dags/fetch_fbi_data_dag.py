@@ -16,7 +16,7 @@ dag = DAG(
     'fetch_fbi_data',
     default_args=default_args,
     description='A DAG to fetch FBI wanted data',
-    schedule_interval=timedelta(hours=1),
+schedule_interval=timedelta(hours=1),
     start_date=days_ago(1),
     tags=['fbi', 'data'],
 )
