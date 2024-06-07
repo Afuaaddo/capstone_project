@@ -3,10 +3,12 @@ import psycopg2
 from psycopg2.extras import execute_batch
 import os
 
+
 def fetch_data():
     url = 'https://api.fbi.gov/wanted/v1/list'
     response = requests.get(url)
     return response.json()['items']
+
 
 def clean_data(items):
     cleaned_items = []
@@ -30,6 +32,7 @@ def clean_data(items):
         })
     return cleaned_items
 
+
 def store_data(items):
     conn = psycopg2.connect(
         dbname='fbi_db',
@@ -47,6 +50,7 @@ def store_data(items):
     conn.commit()
     cursor.close()
     conn.close()
+
 
 if __name__ == '__main__':
     data = fetch_data()
